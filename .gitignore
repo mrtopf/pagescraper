@@ -1,0 +1,14 @@
+*.pyo
+*.pyc
+*.egg-info
+*.cache
+*.orig
+*.rej
+*~
+*.o
+.build
+.sass-cache
+static/js/tinymce
+design/stylesheets
+src/stylesheets
+docs/_build
