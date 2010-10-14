@@ -19,12 +19,15 @@ setup(name='webscraper',
       zip_safe=False,
       install_requires=[
           # -*- Extra requirements: -*-
-          BeautifulSoup,
-          lxml,
-          simplejson,
-          werkzeug,
-          routes,
-          pymongo
+          'BeautifulSoup',
+          'lxml',
+          'simplejson',
+          'werkzeug',
+          'routes',
+          'pymongo',
+          'paste',
+          'jinja2',
+          'logbook'
       ],
       entry_points="""
       # -*- Entry points: -*-
