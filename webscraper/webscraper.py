@@ -19,28 +19,34 @@ class WebScraper(object):
         # TODO: error conditions
         self.results = {}
         self.filestore = storages.FilesystemStore(image_dir+"images", "%Y/%m/%d")
-        self.image_processor = imageprocessor.ImageProcessor(self.filestore)
+        self.image_processor = imageprocessor.ImageProcessor(self.filestore,None,'http://pagescraper.mrtopf.clprojects.net/images/')
 
     def process(self):
         data = urllib2.urlopen(self.url).read()
         print "read"
         try:
-            print 1
             tree = lxml.html.soupparser.fromstring(data)
         except:
             try:
-                print 2
                 tree = lxml.etree.fromstring(data)
             except:
                 return {'error' : 'could not parse document'}
-        print "ok"
         for p in finder.finders:
             f = p(tree, self.results, self.url)
             f.process()
-        print self.results
+
+        images = {}
+        r = 0
         for url in self.results['all_image_urls']:
-            print url
-            print self.image_processor.process(url)
+            res = self.image_processor.process(url)
+            if res is not None:
+                images[url] = res
+                r=r+1
+                if r>5: break
+            else:
+                print "problem with %s" %url
+        self.results['images'] = images
+        self.results['all_image_urls'] = images.keys()
 
         # now create images
         return self.results

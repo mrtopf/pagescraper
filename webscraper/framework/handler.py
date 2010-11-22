@@ -7,13 +7,14 @@ from context import PageContext
 class Handler(object):
     """a request handler which is also the base class for an application"""
     
-    def __init__(self, app=None, request=None, settings={}):
+    def __init__(self, app=None, request=None, settings={}, start_response = None):
         """initialize the Handler with the calling application and the request
         it has to handle."""
         
         self.app = app
         self.request = request
         self.settings = settings
+        self.start_response = start_response
         
     @property
     def context(self):

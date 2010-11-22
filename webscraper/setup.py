@@ -9,7 +9,7 @@ from quantumcore.storages import AttributeMapper
 def setup(**kw):
     """initialize the setup"""
     settings = AttributeMapper()
-    #settings['staticapp'] = get_static_urlparser(pkg_resources.resource_filename(__name__, 'static'))
+    settings['imageapp'] = get_static_urlparser("/tmp")
     #tmpls = settings['templates'] = TemplateHandler(__name__)
     
     settings['log'] = logbook.Logger("quantumlounge")

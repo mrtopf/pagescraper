@@ -38,13 +38,22 @@ class TitleFinder(Finder):
         self.result['title'] = u""
 
 class TextFinder(Finder):
+    MAX_WORDS = 30
 
     def process(self):
         text = self.find_text_in_content(self.tree)
         if text is not None:
+            t = text.split()
+            if len(t)>self.MAX_WORDS:
+                text = " ".join(t[:self.MAX_WORDS])+"..."
+        if text is not None:
             self.result['content'] = text
             return
         text = self.find_text_in_p(self.tree)
+        if text is not None:
+            t = text.split()
+            if len(t)>self.MAX_WORDS:
+                text = " ".join(t[:self.MAX_WORDS])+"..."
         if text is not None:
             self.result['content'] = text
             return

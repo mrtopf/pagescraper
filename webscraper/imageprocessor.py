@@ -1,4 +1,5 @@
 import urllib2
+import urlparse
 import uuid
 import os
 import tempfile
@@ -6,6 +7,9 @@ import quantumcore.media.image
 
 class ImageProcessor(object):
     """an image processor for downscaling and storing images"""
+
+    MIN_WIDTH = 50
+    MIN_HEIGHT = 50
 
     DEFAULT_SPEC = {
         "thumb" : {'width':100},
@@ -15,7 +19,7 @@ class ImageProcessor(object):
         "squared" : { 'square' : 100}
     }
 
-    def __init__(self, filestore, spec=None):
+    def __init__(self, filestore, spec=None, baseurl=""):
         """initialize the image processor with a file storage and a specification 
         on how to scale images. 
 
@@ -36,6 +40,9 @@ class ImageProcessor(object):
         adjusted accordingly. The same goes for a single ``height`` attribute. If 
         both are given, then the biggest version wins. If ``squared`` is given,
         then the image is first scaled and then cropped to make it square.
+
+        ``baseurl`` defines a base URL which will be prepended to every filename
+        and should point to a serveable location.
         """
         
         if spec is None:
@@ -43,6 +50,7 @@ class ImageProcessor(object):
         else:
             self.spec = spec
         self.filestore = filestore
+        self.baseurl = baseurl
 
     def process(self, url):
         """process an image identified by a URL. It creates all the scales
@@ -59,16 +67,24 @@ class ImageProcessor(object):
         """
         # TODO: error conditions, e.g. content type testing etc.
         filename = unicode(uuid.uuid4())
-        image = urllib2.urlopen(url)
+        try:
+            image = urllib2.urlopen(url)
+        except urllib2.URLError, e:
+            print "problem loading image", e
+            return None
         filename = self.filestore.add(image.fp, filename)
         image.close()
         
         file = self.filestore[filename] # retrieve the file pointer
         img = quantumcore.media.image.Image(file)
+        if img.image.size[0]<self.MIN_WIDTH and img.image.size[1]<self.MIN_HEIGHT:
+            # TODO: log
+            print "image too small", img.image.size
+            return None
 
         result = {
             '_original' : {
-                    'filename' : filename,
+                    'url' : urlparse.urljoin(self.baseurl,filename),
                     'width' : img.image.size[0],
                     'height' : img.image.size[1]
                 }
@@ -76,9 +92,19 @@ class ImageProcessor(object):
         for name, spec in self.spec.items():
             if spec.has_key("square"):
                 x = spec['square']
-                img2 = img.fit(x,x).sharpen()
+                try:
+                    img2 = img.fit(x,x).sharpen()
+                except Exception, e:
+                    #TODO: log
+                    print "image failed to scale", e
+                    continue
             else:
-                img2 = img.scale(**spec)
+                try:
+                    img2 = img.scale(**spec)
+                except:
+                    #TODO: log
+                    print "image failed to fit", e
+                    continue
                 
             fno, tmpfilename = tempfile.mkstemp()
             
@@ -90,8 +116,9 @@ class ImageProcessor(object):
             fp.close()
             os.close(fno)
             os.remove(tmpfilename)
-            
-            entry = {'filename': tfilename, 'width': img2.image.size[0], 'height': img2.image.size[1]}
+           
+            url = urlparse.urljoin(self.baseurl,tfilename)
+            entry = {'url': url, 'width': img2.image.size[0], 'height': img2.image.size[1]}
             result[name] = entry
         return result
 
